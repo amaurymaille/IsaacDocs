@@ -788,6 +788,10 @@ ___
 [ ](#){: .abrep .tooltip .badge }
 #### [Vector](Vector.md) Velocity  {: .copyable aria-label='Variables' }
 
+Represents the movement an entity will perform on the next update. In other words, on the next update, `Position.X = Position.X + Velocity.X * GetEntitySpeedMultiplier()` and `Position.Y = Position.Y + Velocity.Y * GetEntitySpeedMultiplier()` with `GetEntitySpeedMultiplier()` an internal function that modulates the velocity based on the effects present on the entity, such as the Broken Watch, Spider Butt, I'm Drowsy / I'm Excited. 
+
+A nice consequence of this behaviour is that you don't actually need to change the way you update velocity in your scripts: you can do as if the entity is always moving at its normal, unaltered speed, and the game will handle the rest itself. This is really important when dealing with projectiles that have complex movements.
+
 ___
 ### Visible {: aria-label='Variables' }
 [ ](#){: .abrep .tooltip .badge }

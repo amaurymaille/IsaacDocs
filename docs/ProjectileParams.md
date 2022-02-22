@@ -1,4 +1,31 @@
 # Class "ProjectileParams"
+
+A `ProjectileParams` defines multiple parameter on a `Projectile`. A `Projectile` (see [EntityProjectile](EntityProjectile.md)) is a bullet spawned by an NPC ([EntityNPC](EntityNPC.md)). `Projectile`s have a velocity (a speed as well as a direction) as well as a height (how far from the ground they are), and a falling speed (how quickly they fall to the ground) and falling acceleration (a rate at which their falling speed is updated each frame). 
+
+Instances of this class are used essentially as parameters to the [EntityNPC::FireProjectiles](EntityNPC.md#fireprojectiles) and [EntityNPC::FireBossProjectiles](EntityNPC.md#firebossprojectiles) functions. 
+
+Parameters on a projectile can define its movement, for instance orbiting their spawner, moving in angles, increasing and decreasing in speed etc.  They can also be used to define properties, like looping through walls (Hush's Continuum tears), going over rocks (spectral tears), hit other enemies (Mom's Heart tears) and so on. See [ProjectileFlags](enums/ProjectileFlags.md) for a more complete list.
+
+`ProjectileParams` are only used when creating a `Projectile`. The game only uses them for the initial parameterization of the projectiles it creates, they can be safely discarded afterwards. Since you have access to the projectiles through [EntityProjectile](EntityProjectile.md), you can always change the parameters of your projectiles after their creation. In fact, some things, like precise control over movement, can only be achieved by directly interacting with the spawned projectile. 
+
+Unlike many other classes whose instance are obtained through calls to methods, `ProjectileParams` are always created by the modder, through the use of the global function `ProjectileParams()` that creates a brand new `ProjectionParams` that is initialized with default values. 
+
+Example use :
+
+```lua
+function mod:SpawnSomeProjectiles()
+    -- Assume there is a dummy in the room
+    local spawner = Isaac.FindByType(EntityType.ENTITY_DUMMY)[1]:ToNPC()
+    -- Create parameters for the projectiles that will spawn
+    local params = ProjectileParams()    
+    -- Configure them : explosive, continuum, homing shot. Spread them because we want to spawn multiple.
+    params.BulletFlags = ProjectileFlags.EXPLODE | ProjectileFlags.SMART | ProjectileFlags.CONTINUUM
+    params.Spread = 2
+    -- FIRE THE MISSILES!
+    spawner:FireProjectiles(spawner.Position, Vector(4, 0), 1, params)
+end
+```
+
 ## Constructors
 ### Projectile·Params () {: aria-label='Constructors' }
 [ ](#){: .abrep .tooltip .badge }
@@ -14,6 +41,8 @@ ___
 ### Bullet·Flags {: aria-label='Variables' }
 [ ](#){: .abrep .tooltip .badge }
 #### int BulletFlags  {: .copyable aria-label='Variables' }
+
+A bitmask of the desired [ProjectileFlags](enums/ProjectileFlags.md) you want on this new projectile. These can later be changed by accessing the [EntityProjectile](EntityProjectile.md) and using [EntityProjectile.ProjectileFlags](EntityProjectile.md#projectileflags).
 
 ___
 ### Change·Flags {: aria-label='Variables' }
@@ -67,7 +96,7 @@ ___
 ### Circle·Angle {: aria-label='Variables' }
 [ ](#){: .abrep .tooltip .badge }
 #### float CircleAngle  {: .copyable aria-label='Variables' }
-Angle offset used by fire_projectiles PROJECTILES_CIRCLE type emitter. Random by default.
+Angle offset used by [EntityNPC::FireProjectiles](EntityNPC.md#fireprojectiles) with `mode = 9`. Random by default. This value is in **radians**. It defines the direction in which the first bullet of the circle will move. All subsequent bullets that are part of this circle will move in a direction that is `CircleAngle + k * 2 * PI / N`, with `N` the amount of tears in the circle.
 ___
 ### Color {: aria-label='Variables' }
 [ ](#){: .abrep .tooltip .badge }
@@ -87,7 +116,7 @@ ___
 ### Dot·Product·Limit {: aria-label='Variables' }
 [ ](#){: .abrep .tooltip .badge }
 #### float DotProductLimit  {: .copyable aria-label='Variables' }
-Direction bullets are being fired in Dot product of FireDirectionLimit, bullet direction must be &gt;= this value
+Used when projectiles are spawned through [EntityNPC::FireProjectiles](EntityNPC.md#fireprojectiles) with `mode = 9`. Is part of a complex verification system that allows to restrict only some bullets of the circle to spawn.
 ___
 ### Falling·Accel·Modifier {: aria-label='Variables' }
 [ ](#){: .abrep .tooltip .badge }
@@ -103,6 +132,7 @@ ___
 [ ](#){: .abrep .tooltip .badge }
 #### [Vector](Vector.md) FireDirectionLimit  {: .copyable aria-label='Variables' }
 
+Used when projectiles are spawned through [EntityNPC::FireProjectiles](EntityNPC.md#fireprojectiles) with `mode = 9`. Is part of a complex verification system that allows to restrict only some bullets of the circle to spawn.
 ___
 ### Grid·Collision {: aria-label='Variables' }
 [ ](#){: .abrep .tooltip .badge }
@@ -113,6 +143,7 @@ ___
 [ ](#){: .abrep .tooltip .badge }
 #### float HeightModifier  {: .copyable aria-label='Variables' }
 
+Flat modifier to the original height of a spawned bullet. The resulting height will be the original height selected by the game + this value. Note that height is, counter-intuitively, higher the closer a projectile is to the ground. Most projectiles start at a height of roughly -25, and disappear once their height gets close to 0. A projectile with a height below -50 doesn't have its hitbox enabled (check the Height value of the projectiles spawned by Red Mega Fatty for an example).
 ___
 ### Homing·Strength {: aria-label='Variables' }
 [ ](#){: .abrep .tooltip .badge }
@@ -132,11 +163,13 @@ ___
 ### Spread {: aria-label='Variables' }
 [ ](#){: .abrep .tooltip .badge }
 #### float Spread  {: .copyable aria-label='Variables' }
-For quad/quint/etc spread shots.
+For quad/quint/etc spread shots. This value does not follow a linear progression, a `Spread` of `2` will not result in shots being spread twice as far apart than with a `Spread` of 1. 
 ___
 ### Target·Position {: aria-label='Variables' }
 [ ](#){: .abrep .tooltip .badge }
 #### [Vector](Vector.md) TargetPosition  {: .copyable aria-label='Variables' }
+
+A position that has meaning for some flags, and is completely ignored for others. For instance, if the projectile has an orbitting flag, this position defines the point the projectile is orbitting.
 
 ___
 ### Variant {: aria-label='Variables' }

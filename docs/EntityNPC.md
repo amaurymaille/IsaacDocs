@@ -31,6 +31,8 @@ ___
 [ ](#){: .abrep .tooltip .badge }
 #### void FireProjectiles ( [Vector](Vector.md) Pos, [Vector](Vector.md) Velocity, ProjectilesMode Mode, [ProjectileParams](ProjectileParams.md) Params ) {: .copyable aria-label='Functions' }
 
+Fire a number of projectiles. Each projectile is spawned at `Pos`. `Velocity` will determine the speed at which each bullet will move as well as the direction in which they will move. `Mode` is used to determine how many projectiles are spawned, and the eventual shape they will form. `Params` is used to define miscellaneous parameters, such as the speed at which the projectiles will fall to the ground, their eventual properties (can they hit other enemies, do they move in a spiral or in a straight line, etc.).
+
 ???- info "ProjectilesMode"
     * 0 : single projectile
     * 1 : two projectiles (uses params.Spread)
@@ -42,6 +44,30 @@ ___
     * 7 : four projectiles in a x pattern (uses velocity.x as speed)
     * 8 : eight projectiles in a star pattern (uses velocity.x as speed)
     * 9 : N projectiles in a circle (velocity.x = speed, velocity.y = N, params.FireDirectionLimit and params.DotProductLimit to fire in an arc only)
+
+    **Notes regarding ProjectileModes 1 to 5 (included)**
+
+    When using ProjectileMode 1 to 5 (included), the `params.Spread` value is used to determine the spacing between each bullet. This value does not follow a linear progression and should therefore be studied through trial and error until the desired result is achieved (i.e., using `params.Spread = 2` wil not result in projectiles being twice as spaced as with `params.Spread = 1`). An interesting property of using these modes is the fact that the game will compute the velocity of each bullet in such a way that they all disappear at the same time (this means the game will not apply exactly the velocity you requested, but will instead use it as a base from which it will derive the resulting velocities). For these modes, `Velocity` is used both as the base velocity and as a directional vector. In effect, the game will spawn bullets in a cone in a given direction. A cone is defined by its angle and by its direction. For instance, if we consider an upwards pointing cone, like this `\/`, its direction would be the vector `(0, -1)`, and its angle would be whatever the angle between these two lines is. In this function, the width of the cone is based on `params.Spread` and `mode`, the direction of the cone is `Velocity` normalized. 
+
+    For `modes` 1 and 2, a given value of `params.Spread` will yield the same angle. For `modes` 3 to 5 (included), a given value of `params.Spread` will also yield the same angle (slightly wider than for `modes` 1 and 2). For instance, `params.Spread = 1` will result in an angle of `32.04°` for modes 1 and 2, and an angle of `48.006°` for modes 3 to 5 (included).
+
+    * For `mode = 1`, the bullets will be fired in a V shape similar to what Greed Heads do. The bullets are fired on the sides of the cone.
+    * For `mode = 2` and `mode = 3` the bullets will be fired in a V shape plus an additional bullet in the direction defined by `Velocity`. This is similar to the tears of Keeper in Repentance (`mode = 2`) and the tears shot by Greed (`mode = 3`).
+    * For `mode = 4`, the bullets will be fired in two different V shapes, one wide, and one narrow (basically a V inside another V). The edges of the outer V are the edges of the cone. The edges of the inner V are obtained by bisecting each of the angle formed by (Velocity, OuterEdge). This is similar to the tears shot by Super Greed.
+    * For `mode = 5`, the bullets will be fired in two different V shapes, one wide, and one narrow, plus an additional bullet in the direction defined by `Velocity`. This is similar to `mode = 4` plus an additional bullet. This is similar to the five tear shot of Ultra Greed.
+
+    **Notes regarding ProjectileMode 9**
+
+    When using ProjectileMode 9 (circle), the game will check `params.CircleAngle` (in **radians**) to determine the direction in which to fire the first bullet in the circle. Each subsequent bullet will be offset by `k * 2 * PI / N` radians, with `k` the number - 1 of the projectile (so the second projectile will have a direction of `1 * 2 * PI / N`, the third a direction of `2 * 2 * PI / N` and so on). `params.FireDirectionLimit` and `params.DotProductLimit` are used to determine which projectiles will actually spawn. For each of the attempted spawn, compute a normalized vector `V` oriented in the direction the projectile would follow. Next, compute the dot product of `V` with `params.FireDirectionLimit`. If the result of the dot product is **STRICTLY higher** than `params.DotProductLimit`, then the projectile is allowed to spawn, otherwise it is skipped.
+
+    For instance, let's say that `params.CircleAngle` is 0, and 4 projectiles are spawned. This will result in projectiles being fired in a + pattern. The four direction vectors are `(1, 0)`, `(0, 1)`, `(-1, 0)` and `(0, -1)`. Let `params.DireDirectionLimit = Vector(2, 0)`, and `params.DotProductLimit = 0`. Let `*` denote the dot product. 
+
+    * `(1, 0) * (2, 0) = 2`
+    * `(0, 1) * (2, 0) = 0`
+    * `(-1, 0) * (2, 0 = -2`
+    * `(0, -1) * (2, 0) = 0`.
+
+    Only the first projectile will be allowed to spawn, because all other dot products are lower than `params.DotProductLimit`. Note that if you do reproduce this example, the second and/or fourth projectiles may also be allowed to spawn because of the precision of floating point numbers (computing the second dot product in game yields 1.22e-16 which is greather than 0, computing the fourth yields -3.67e-16 which is lower than 0).
 ___
 ### Get·Alive·Enemy·Count () {: aria-label='Functions' }
 [ ](#){: .abrep .tooltip .badge }
