@@ -99,7 +99,57 @@ ___
 ### Shoot·Angle () {: aria-label='Functions' }
 [ ](#){: .static .tooltip .badge } [ ](#){: .abrep .tooltip .badge }
 #### static [EntityLaser](EntityLaser.md) ShootAngle ( int Variant, [Vector](Vector.md) SourcePos, float AngleDegrees, int Timeout, [Vector](Vector.md) PosOffset, [Entity](Entity.md) Source ) {: .copyable aria-label='Functions' }
-static helper to simplify spawning lasers
+
+Static function used to spawn lasers. The `Variant` parameter defines the kind of laser to spawn. `SourcePos` defines the point of origin of the laser. `AngleDegrees` defines the orientation (in degrees) of the laser. `Timeout` defines the duration of the laser in logic frames (30 logic frames in a second). `PosOffset` can be used to offset the source of the laser. `Source` is the [Entity](Entity.md) that spawns the laser. 
+
+The spawned laser will not be active in the same frame it is spawned in, you'll have to wait one logic frame before seeing it on screen. This allows you to tune the extra parameters of the laser before it is actually processed by the game, such as its curve or its trajectory. For instance, The Gate's Brimstone homes in on all entities on screen, this is something you can achieve by configuring your laser after spawning it, and before rendering it, which will make it look smooth.
+
+The `PosOffset` vector is added to the `SourcePos` vector in order to define where the laser will be **rendered**. However, the hitbox of the laser will actually be computed by taking only `SourcePos` into account. This is used, for instance, with Technology 2. While the laser does come from Isaac's Eye, its hitbox starts a bit away from Isaac. To recreate that in game, you would put the `SourcePos` a bit away from Isaac, and offset that into Isaac.
+
+???+ example Example
+    ```lua
+    -- Shoot a Technology 2 like laser to the right (Variant = 2, see notes below), offset it to Isaac's head
+    local isaac = Game():GetPlayer(0)
+    local isaacPosition = isaac.Position
+    local positionOffset = Vector(10, 0)
+    local spawnPosition = isaacPosition + positionOffset
+    local laser = EntityLaser.Shoot(2, spawnPosition, 0, 30, -positionOffset, isaac)
+    ```
+
+Specifying a `Source` will cause the laser to move in sync with said source; otherwise the laser will not be synced with any particular entity in the room and will remain static. If a `Source` is specified, the game will consider an additional hitbox that will cause targets to take damage at point blank range, which is not the case with a static laser (use the console command `debug 6` to see the difference).
+
+???+ note Notes
+    **On the `Variant` parameter**
+
+    Laser variants are not defined through enums and are therefore undocumented. Here are some of them (as of Repentance; some of them might be unavailable in Afterbirth+):
+
+    * `1`: "Classic" Brimstone, as if you picked the item or used Sulfur
+    * `2`: Technology laser, as if you picked Technology 2. If the `Source` is not configured, the hitbox will extend all the way up to the `SourcePos`. If the `Source` is not nil, then the hitbox will be slightly offset forward in a direction of `AngleDegrees` to prevent immediate damage.
+    * `3`: Trisagion laser.
+    * `4`: Pride laser.
+    * `5`: Angels / Revelation laser. If not source is provided, hitbox starts at `SourcePos`. If source is provided, the hitbox is offset forward in the direction the laser is facing.
+    * `6`: Mega Satan laser. Screen will shake for the whole duration.
+    * `7`: Tractor Beam laser. Does not deal damage regardless of which entity is the source, or whether source is specified or not.
+    * `8`: Beam of light that spawns with Brimstone sound effect, internally referred to a "Light Ring". Hitbox offset if the player is the source.
+    * `9`: Brimstone beam, except the blood swirls, like Hush's pillars of tears attack.
+    * `10`: Jacob's Ladder / 120 Volt electricity.
+    * `11`: Wide Brimstone (as if Brimstone + Sulfur, or double Sulfur in the same room). Screen shakes upon fire.
+    * `12`: Montezuma's Revenge.
+    * `13`: The Beast's Brimstone. Hitbox will be massively offset if source is provided.
+    * `14`: Wide version of Hush's laser (`9` with the width and screen shake effect of `11`.
+    * `15`: Mega Satan version of Hush's laser (`9` with the width and continuous screen shake effet of `6`.
+
+???+ bug Bugs
+    Specifying an invalid variant will cause the game to crash on the next logic frame. It is recommanded to write your own version of this function that performs a validation of the variant parameter and simply returns `nil` instead, like so:
+    ```lua
+    function ShootAngle(variant, sourcePos, angleDegrees, timeout, posOffset, source)
+        if variant < 1 or variant > 15 then
+            return nil
+        else
+            return EntityLaser.ShootAngle(variant, sourcePos, angleDegrees, timeout, posOffset, source)
+        end
+    end
+    ```
 ___
 ## Variables
 ### Angle {: aria-label='Variables' }
